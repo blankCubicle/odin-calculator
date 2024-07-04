@@ -1,0 +1,53 @@
+html {
+  box-sizing: border-box;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: inherit;
+  margin: 0;
+  padding: 0;
+}
+
+main {
+  display: flex;
+  flex-flow: column nowrap;
+  gap: 16px;
+  margin: 16px auto 0;
+  max-width: 300px;
+}
+
+.display {
+  display: flex;
+  font-size: 42px;
+  font-family: monospace;
+}
+
+.sign {
+  opacity: 0.2;
+
+  &.negative {
+    opacity: 1;
+  }
+}
+
+.value {
+  margin-left: auto;
+}
+
+.keypad {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 5px;
+  aspect-ratio: 1;
+
+  button {
+    color: black;
+  }
+
+  .plus {
+    grid-column: 4;
+    grid-row: 5/7;
+  }
+}
