@@ -24,12 +24,14 @@ main {
   font-family: monospace;
 }
 
-.sign {
+.sign,
+.memory {
   opacity: 0.2;
+}
 
-  &.negative {
-    opacity: 1;
-  }
+.sign.negative,
+.memory.set {
+  opacity: 1;
 }
 
 .value {

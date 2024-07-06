@@ -19,21 +19,58 @@ const operate = function (a, b, operator) {
 };
 
 const displayValue = document.querySelector('.value');
-const sign = document.querySelector('.sign');
+const signIndicator = document.querySelector('.sign');
+const memIndicator = document.querySelector('.memory');
 
-let memory = null;
-let waiting = false;
-let a = null;
-let operator = null;
+const getFloatFromDisplay = function () {
+  let value = displayValue.textContent;
+  if (value === 'ERROR') return value;
+
+  if (signIndicator.classList.contains('negative')) value = '-' + value;
+  return parseFloat(value);
+};
+
+let shortMem = null;
+let longMem = 0;
+let recalled = false;
+let replaced = false;
+let waitingForNextValue = false;
+let lastValue = null;
+let lastOperator = null;
 
 const clear = function () {
   const value = displayValue.textContent;
-  if (value === '0' || value === 'ERROR') a = operator = null;
+  if (value === '0' || value === 'ERROR') lastValue = lastOperator = null;
 
-  memory = null;
-  waiting = false;
+  shortMem = null;
+  recalled = replaced = waitingForNextValue = false;
   displayValue.textContent = '0';
-  sign.classList.remove('negative');
+  signIndicator.classList.remove('negative');
+};
+
+const handleMemKeys = function (e) {
+  const key = e.target.value;
+
+  if (key === 'rcm') {
+    if (recalled) {
+      memIndicator.classList.remove('set');
+      longMem = 0;
+      return;
+    }
+
+    updateDisplayValue(longMem);
+    recalled = true;
+    waitingForNextValue = false;
+    return;
+  }
+
+  const currentValue = getFloatFromDisplay();
+  if (currentValue === 'ERROR') return;
+
+  longMem = operate(longMem, currentValue, key === 'm-' ? '-' : '+');
+  memIndicator.classList.add('set');
+  recalled = false;
+  replaced = true;
 };
 
 const handleValueInput = function (e) {
@@ -42,10 +79,10 @@ const handleValueInput = function (e) {
 
   const key = e.target.value;
 
-  if (waiting) {
+  if (recalled || replaced || waitingForNextValue) {
     value = '0';
-    sign.classList.remove('negative');
-    waiting = false;
+    signIndicator.classList.remove('negative');
+    recalled = replaced = waitingForNextValue = false;
   }
 
   if (value.length >= 10) return;
@@ -61,26 +98,18 @@ const handleValueInput = function (e) {
 };
 
 const negateValue = function () {
-  memory = null;
-  waiting = false;
-  sign.classList.toggle('negative');
-};
-
-const getFloatFromDisplay = function () {
-  let value = displayValue.textContent;
-  if (value === 'ERROR') return value;
-
-  if (sign.classList.contains('negative')) value = '-' + value;
-  return parseFloat(value);
+  shortMem = null;
+  waitingForNextValue = false;
+  signIndicator.classList.toggle('negative');
 };
 
 const updateDisplayValue = function (value) {
   displayValue.textContent = value === 'ERROR' ? value : Math.abs(value);
 
   if (value < 0) {
-    sign.classList.add('negative');
+    signIndicator.classList.add('negative');
   } else {
-    sign.classList.remove('negative');
+    signIndicator.classList.remove('negative');
   }
 };
 
@@ -88,61 +117,68 @@ const handleOperatorKey = function (e) {
   const currentValue = getFloatFromDisplay();
   if (currentValue === 'ERROR') return;
 
-  const key = e.target.value;
-  memory = null;
+  const currentOperator = e.target.value;
+  shortMem = null;
 
-  if (key === '√' || key === '%') {
-    updateDisplayValue(operate(a, currentValue, key));
-    waiting = false;
+  if (currentOperator === '√' || currentOperator === '%') {
+    updateDisplayValue(operate(lastValue, currentValue, currentOperator));
+    recalled = waitingForNextValue = false;
+    replaced = true;
     return;
   }
 
-  if (a === null || operator === null) {
-    a = currentValue;
-    operator = key;
-    waiting = true;
+  if (lastValue === null || lastOperator === null) {
+    lastValue = currentValue;
+    lastOperator = currentOperator;
+    waitingForNextValue = true;
     return;
   }
 
-  // Last operation is only repeated with '=', else,
-  // just replace operator until a second value is input
-  if (waiting) return (operator = key);
+  // To allow mistake correction, don't operate if the displayValue
+  // hasn't changed, just replace operator
+  if (waitingForNextValue) {
+    lastOperator = currentOperator;
+    return;
+  }
 
-  a = operate(a, currentValue, operator);
-  operator = key;
-  waiting = true;
-  updateDisplayValue(a);
+  lastValue = operate(lastValue, currentValue, lastOperator);
+  updateDisplayValue(lastValue);
+  lastOperator = currentOperator;
+  waitingForNextValue = true;
 };
 
 const handleEqualsKey = function () {
-  const currentValue = getFloatFromDisplay();
+  let currentValue = getFloatFromDisplay();
   if (currentValue === 'ERROR') return;
-  if (operator === null && memory === null) return;
+  if (lastOperator === null && shortMem === null) return;
 
-  let b = currentValue;
-
-  if (memory === null) memory = { value: b, operator };
-
-  if (operator === null) {
-    a = b;
-    b = memory.value;
-    operator = memory.operator;
+  if (shortMem === null) {
+    shortMem = { value: currentValue, operator: lastOperator };
   }
 
-  a = operate(a, b, operator);
-  operator = null;
-  waiting = true;
-  updateDisplayValue(a);
+  // Repeats last calculation e.g.: [10][-][1][=][=][=]... for a countdown
+  if (lastOperator === null) {
+    lastValue = currentValue;
+    currentValue = shortMem.value;
+    lastOperator = shortMem.operator;
+  }
+
+  lastValue = operate(lastValue, currentValue, lastOperator);
+  updateDisplayValue(lastValue);
+  lastValue = lastOperator = null;
+  waitingForNextValue = true;
 };
 
 const numKeys = document.querySelectorAll('.num');
 const negateKey = document.querySelector('.negate');
 const clearKey = document.querySelector('.clear');
+const memoryKeys = document.querySelectorAll('.mem');
 const operatorKeys = document.querySelectorAll('.operator');
 
 numKeys.forEach((key) => key.addEventListener('click', handleValueInput));
 negateKey.addEventListener('click', negateValue);
 clearKey.addEventListener('click', clear);
+memoryKeys.forEach((key) => key.addEventListener('click', handleMemKeys));
 operatorKeys.forEach((key) => {
   key.addEventListener(
     'click',
