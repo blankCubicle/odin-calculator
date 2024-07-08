@@ -85,8 +85,9 @@ const handleValueInput = function (e) {
     recalled = replaced = waitingForNextValue = false;
   }
 
-  if (value.length >= 10) return;
-  if (key === '.' && (value.includes('.') || value.length >= 9)) return;
+  // font's dot char is zero-width, don't consider it for char/digit limit (10)
+  if (value.includes('.') && (key === '.' || value.length >= 11)) return;
+  if (!value.includes('.') && value.length >= 10) return;
 
   if (value === '0') {
     value = key === '.' ? value + key : key;
@@ -98,8 +99,10 @@ const handleValueInput = function (e) {
 };
 
 const negateValue = function () {
+  if (displayValue.textContent === 'ERROR') return;
   shortMem = null;
-  waitingForNextValue = false;
+  if (recalled || waitingForNextValue) replaced = true;
+  recalled = waitingForNextValue = false;
   signIndicator.classList.toggle('negative');
 };
 
