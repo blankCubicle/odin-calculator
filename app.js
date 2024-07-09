@@ -49,6 +49,8 @@ const clear = function () {
 
 const handleMemKeys = function (e) {
   const key = e.target.value;
+  const currentValue = getFloatFromDisplay();
+  if (currentValue === 'ERROR') return;
 
   if (key === 'rcm') {
     if (recalled) {
@@ -62,9 +64,6 @@ const handleMemKeys = function (e) {
     waitingForNextValue = false;
     return;
   }
-
-  const currentValue = getFloatFromDisplay();
-  if (currentValue === 'ERROR') return;
 
   longMem = operate(longMem, currentValue, key === 'm-' ? '-' : '+');
 
