@@ -7,10 +7,9 @@ const operate = function (a, b, operator) {
     case '*':
       return a * b;
     case '/':
-      if (b === 0) return 'ERROR';
-      return a / b;
+      return b === 0 ? 'ERROR' : a / b;
     case '√':
-      return Math.sqrt(b);
+      return b < 0 ? 'ERROR' : Math.sqrt(b);
     case '%':
       return ((a ?? 1) * b) / 100;
     default:
