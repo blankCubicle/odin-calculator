@@ -68,6 +68,11 @@ const handleMemKeys = function (e) {
   if (currentValue === 'ERROR') return;
 
   longMem = operate(longMem, currentValue, key === 'm-' ? '-' : '+');
+
+  const abs = Math.abs(longMem);
+  if (abs > 9999999999) longMem = 9999999999;
+  if (abs < 1e-9) longMem = 0;
+
   memIndicator.classList.add('set');
   recalled = false;
   replaced = true;
@@ -106,10 +111,25 @@ const negateValue = function () {
   signIndicator.classList.toggle('negative');
 };
 
-const updateDisplayValue = function (value) {
-  displayValue.textContent = value === 'ERROR' ? value : Math.abs(value);
+const template = new Intl.NumberFormat('en-US', {
+  maximumFractionDigits: 9,
+  signDisplay: 'never',
+  useGrouping: false,
+});
 
-  if (value < 0) {
+const updateDisplayValue = function (value) {
+  let newValue;
+  let sign;
+
+  if (value !== 'ERROR') {
+    newValue = Math.abs(value);
+    newValue = template.format(Math.min(newValue, 9999999999).toPrecision(10));
+    sign = Math.sign(value) < 0 ? true : false;
+  }
+
+  displayValue.textContent = newValue ?? value;
+
+  if (sign && newValue !== '0') {
     signIndicator.classList.add('negative');
   } else {
     signIndicator.classList.remove('negative');
