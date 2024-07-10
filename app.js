@@ -206,3 +206,15 @@ operatorKeys.forEach((key) => {
     key.value === '=' ? handleEqualsKey : handleOperatorKey,
   );
 });
+
+const typeableKeys = document.querySelectorAll('.keypad button[data-key]');
+document.addEventListener('keydown', (e) => {
+  let pressed = e.key;
+  if (pressed === 'Enter') pressed = '=';
+
+  const match = typeableKeys
+    .values()
+    .find((key) => key.dataset.key === pressed);
+
+  if (match) match.dispatchEvent(new Event('click'));
+});
