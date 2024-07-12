@@ -68,7 +68,9 @@ const handleMemKeys = function (e) {
   longMem = operate(longMem, currentValue, key === 'm-' ? '-' : '+');
 
   const abs = Math.abs(longMem);
-  if (abs > 9999999999) longMem = 9999999999;
+  const sign = Math.sign(longMem);
+
+  if (abs > 9999999999) longMem = 9999999999 * sign;
   if (abs < 1e-9) longMem = 0;
 
   memIndicator.classList.add('set');
